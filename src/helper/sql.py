@@ -11,14 +11,20 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env")
 
-DB_PATH = str(os.getenv("DB_PATH"))+"/keys.db"
-if not DB_PATH:
+configured_db_path = os.getenv("DB_PATH")
+if not configured_db_path:
     raise RuntimeError("DB_PATH is missing from the project .env file")
+configured_db_path = Path(configured_db_path)
+DB_PATH = str(
+    configured_db_path / "keys.db"
+    if configured_db_path.is_dir() or configured_db_path.suffix == ""
+    else configured_db_path
+)
 
-_JSON_COLUMNS = {"rpm", "rpd", "tpd", "tpm"}
+_JSON_COLUMNS = {"rpmon", "rpm", "rpd", "tpd", "tpm", "tpmon"}
 _UPDATE_COLUMNS = {
     "key_type", "api_url", "provider", "account_name", "api_key",
-    "rpm", "rpd", "tpd", "tpm", "status",
+    "rpmon", "rpm", "rpd", "tpd", "tpm", "tpmon", "status",
 }
 
 
@@ -32,24 +38,40 @@ def get_connection() -> sqlite3.Connection:
 def create_table() -> None:
     """Create the keys table if it does not exist."""
     with get_connection() as connection:
+        existing = connection.execute("PRAGMA table_info(keys)").fetchall()
+        if existing and existing[0]["type"].upper() == "INTEGER":
+            row_count = connection.execute("SELECT COUNT(*) FROM keys").fetchone()[0]
+            if row_count:
+                raise RuntimeError(
+                    "The existing keys table uses integer IDs; migrate its data before switching to UUIDs."
+                )
+            connection.execute("DROP TABLE keys")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS keys (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id TEXT PRIMARY KEY,
                 key_type TEXT NOT NULL,
                 api_url TEXT NOT NULL,
                 provider TEXT NOT NULL,
                 account_name TEXT NOT NULL,
                 api_key TEXT NOT NULL,
+                rpmon TEXT,
                 rpm TEXT,
                 rpd TEXT,
                 tpd TEXT,
                 tpm TEXT,
+                tpmon TEXT,
                 reg_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 status TEXT NOT NULL
             )
             """
         )
+        columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(keys)")
+        }
+        for column in ("rpmon", "tpmon"):
+            if column not in columns:
+                connection.execute(f"ALTER TABLE keys ADD COLUMN {column} TEXT")
 
 
 def clean_data(key: Keys | dict[str, Any]) -> dict[str, Any]:
@@ -64,11 +86,10 @@ def clean_data(key: Keys | dict[str, Any]) -> dict[str, Any]:
             data[column] = json.dumps(data[column])
 
     data.pop("reg_date", None)
-    data.pop("id", None)
     return data
 
 
-def insert_keys(keys: Keys | list[Keys]) -> list[int]:
+def insert_keys(keys: Keys | list[Keys]) -> list[str]:
     """Insert one key or many keys and return their database IDs."""
     if isinstance(keys, Keys):
         keys = [keys]
@@ -86,7 +107,7 @@ def insert_keys(keys: Keys | list[Keys]) -> list[int]:
                 f"VALUES ({placeholders})"
             )
             cursor = connection.execute(query, [data[column] for column in columns])
-            ids.append(cursor.lastrowid)
+            ids.append(data["id"])
     return ids
 
 
@@ -101,12 +122,11 @@ def _decode_row(row: sqlite3.Row) -> dict[str, Any]:
 def row_to_key(row: sqlite3.Row) -> Keys:
     """Convert a database row into a Keys model without NULL fields."""
     data = _decode_row(row)
-    data.pop("id", None)
     data.pop("reg_date", None)
     return Keys.model_validate(data)
 
 
-def get_key(key_id: int) -> Keys | None:
+def get_key(key_id: str) -> Keys | None:
     """Return one key by ID, or None when it does not exist."""
     with get_connection() as connection:
         row = connection.execute(
@@ -122,7 +142,7 @@ def get_all_keys() -> list[Keys]:
     return [row_to_key(row) for row in rows]
 
 
-def update_key(key_id: int, updates: dict[str, Any]) -> bool:
+def update_key(key_id: str, updates: dict[str, Any]) -> bool:
     """Update selected fields of one key."""
     data = clean_data(updates)
     data = {name: value for name, value in data.items() if name in _UPDATE_COLUMNS}
@@ -138,13 +158,13 @@ def update_key(key_id: int, updates: dict[str, Any]) -> bool:
     return cursor.rowcount > 0
 
 
-def delete_keys(ids: int | list[int] | None = None) -> int:
+def delete_keys(ids: str | list[str] | None = None) -> int:
     """Delete one key, many keys, or all keys; return count deleted."""
     with get_connection() as connection:
         if ids is None:
             cursor = connection.execute("DELETE FROM keys")
         else:
-            if isinstance(ids, int):
+            if isinstance(ids, str):
                 ids = [ids]
             if not ids:
                 return 0

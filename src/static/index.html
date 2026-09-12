@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM-rotry — API & LLM Key Gateway</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="container nav-wrapper">
+            <div class="brand">
+                <div class="brand-icon">🔄</div>
+                <div class="brand-info">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h1>LLM-rotry</h1>
+                        <span class="brand-badge">Key Gateway</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Static / Live Mode Switcher -->
+                <div class="mode-toggle-card" title="Toggle between Mock Static Data and Live SQLite Database">
+                    <span class="mode-label">Live</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="modeSwitch">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="mode-label">Static</span>
+                    <span id="modeBadge" class="mode-badge live">
+                        <span class="status-dot"></span>
+                        <span id="modeText">Live Backend</span>
+                    </span>
+                </div>
+
+                <!-- Action Buttons -->
+                <button class="btn btn-secondary btn-sm" id="btnRefresh" title="Refresh key list">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Refresh
+                </button>
+
+                <button class="btn btn-primary" id="btnOpenAddModal">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Key
+                </button>
+
+                <button class="btn btn-danger btn-sm" id="btnOpenCleanupModal" title="Delete all stored keys">
+                    Cleanup All
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- Metrics Overview Section -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Total Keys</span>
+                        <span>🔑</span>
+                    </div>
+                    <div class="stat-value" id="statTotalKeys">0</div>
+                    <div class="stat-subtext" id="statActiveRatio">0 active in rotation</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>API Keys (Request-only)</span>
+                        <span>🌐</span>
+                    </div>
+                    <div class="stat-value" id="statApiKeys">0</div>
+                    <div class="stat-subtext">RPM & RPD limits only</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>LLM Keys (Tokens + Req)</span>
+                        <span>🤖</span>
+                    </div>
+                    <div class="stat-value" id="statLlmKeys">0</div>
+                    <div class="stat-subtext">TPM, TPD, RPM, RPD</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>Aggregate Throughput</span>
+                        <span>⚡</span>
+                    </div>
+                    <div class="stat-value" id="statTotalRpm">0</div>
+                    <div class="stat-subtext">Total RPM capacity</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Staged Keys Queue Banner (shown if staged keys exist) -->
+        <section class="staging-section" id="stagingSection">
+            <div class="staging-box">
+                <div class="staging-header">
+                    <div class="staging-title">
+                        <span>📦 Staged Keys Queue</span>
+                        <span class="staging-badge" id="stagedCountBadge">0</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(Ready to register in batch)</span>
+                    </div>
+                    <div class="staging-actions">
+                        <button class="btn btn-secondary btn-sm" id="btnClearStaging">Clear Staging</button>
+                        <button class="btn btn-primary btn-sm" id="btnFinalizeStaging">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Finalize & Register All (<span id="finalizeCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+                <div class="staged-items-list" id="stagedItemsList">
+                    <!-- Dynamic chips of queued keys -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Search, Filter & Bulk Controls -->
+        <section class="controls-section">
+            <div class="controls-card">
+                <div class="search-filter-group">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search provider, account, or API URL...">
+                    </div>
+
+                    <select class="select-filter" id="filterKeyType">
+                        <option value="all">All Key Types</option>
+                        <option value="api_call">API Call (Request-based only)</option>
+                        <option value="llm_call">LLM Call (Tokens + Requests)</option>
+                    </select>
+
+                    <select class="select-filter" id="filterStatus">
+                        <option value="all">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+
+                <!-- Bulk Selection Actions -->
+                <div class="bulk-actions" id="bulkActions">
+                    <span style="font-size: 0.825rem; color: var(--text-muted);">
+                        <strong id="selectedCount" style="color: var(--text-main);">0</strong> selected
+                    </span>
+                    <button class="btn btn-danger btn-sm" id="btnBulkDelete">
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Keys Display Section -->
+        <section class="keys-section">
+            <div class="keys-grid" id="keysGrid">
+                <!-- Dynamic key cards populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Add Key (Single or Staging) -->
+    <div class="modal-backdrop" id="addKeyModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Key</h3>
+                <button class="modal-close-btn" id="closeAddModal">&times;</button>
+            </div>
+            <form id="addKeyForm">
+                <div class="modal-body">
+                    
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="addKeyType">Key Type *</label>
+                            <select class="form-select" id="addKeyType" required>
+                                <option value="api_call">API Call (Requests only: RPM / RPD)</option>
+                                <option value="llm_call" selected>LLM Call (Tokens + Requests: TPM, TPD, RPM, RPD)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addProvider">Provider *</label>
+                            <input class="form-input" type="text" id="addProvider" placeholder="e.g. OpenAI, Anthropic, Serper" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="addAccountName">Account / Profile Name *</label>
+                            <input class="form-input" type="text" id="addAccountName" placeholder="e.g. prod-primary-01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addStatus">Initial Status</label>
+                            <select class="form-select" id="addStatus">
+                                <option value="active" selected>Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="addApiUrl">Endpoint API URL *</label>
+                        <input class="form-input" type="url" id="addApiUrl" placeholder="https://api.openai.com/v1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="addApiKey">API Secret Key *</label>
+                        <input class="form-input" type="text" id="addApiKey" placeholder="sk-..." required>
+                    </div>
+
+                    <!-- Request-Based Limits (Both API Call and LLM Call) -->
+                    <fieldset class="limits-fieldset">
+                        <legend class="limits-legend">⚡ Request Limits (RPMin, RPD & RPMon)</legend>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="addRpm">RPM (Requests/min)</label>
+                                <input class="form-input" type="number" id="addRpm" placeholder="e.g. 500" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addRpmBurst">RPM Burst (<= RPM)</label>
+                                <input class="form-input" type="number" id="addRpmBurst" placeholder="e.g. 50" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="addRpd">RPD (Requests/day)</label>
+                                <input class="form-input" type="number" id="addRpd" placeholder="e.g. 10000" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addRpdBurst">RPD Burst (<= RPD)</label>
+                                <input class="form-input" type="number" id="addRpdBurst" placeholder="e.g. 500" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label class="form-label" for="addRpmon">RPMon (Requests/month)</label>
+                                <input class="form-input" type="number" id="addRpmon" placeholder="e.g. 200000" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addRpmonBurst">RPMon Burst (<= RPMon)</label>
+                                <input class="form-input" type="number" id="addRpmonBurst" placeholder="e.g. 5000" min="0">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Token-Based Limits (Only for LLM Call) -->
+                    <fieldset class="limits-fieldset token-limits-box" id="tokenLimitsBox">
+                        <legend class="limits-legend">🧠 Token Limits (TPM, TPD & TPMon - LLM Only)</legend>
+                        <div class="limits-info-banner" id="tokenNotice">
+                            Generic API keys do not consume tokens. Token limits are only applied to LLM calls.
+                        </div>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="addTpm">TPM (Tokens/min)</label>
+                                <input class="form-input token-input" type="number" id="addTpm" placeholder="e.g. 200000" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addTpmBurst">TPM Burst (<= TPM)</label>
+                                <input class="form-input token-input" type="number" id="addTpmBurst" placeholder="e.g. 20000" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="addTpd">TPD (Tokens/day)</label>
+                                <input class="form-input token-input" type="number" id="addTpd" placeholder="e.g. 2000000" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addTpdBurst">TPD Burst (<= TPD)</label>
+                                <input class="form-input token-input" type="number" id="addTpdBurst" placeholder="e.g. 200000" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label class="form-label" for="addTpmon">TPMon (Tokens/month)</label>
+                                <input class="form-input token-input" type="number" id="addTpmon" placeholder="e.g. 50000000" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="addTpmonBurst">TPMon Burst (<= TPMon)</label>
+                                <input class="form-input token-input" type="number" id="addTpmonBurst" placeholder="e.g. 1000000" min="0">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelAdd">Cancel</button>
+                    <!-- User can add to staging queue first, or register directly -->
+                    <button type="button" class="btn btn-secondary" id="btnStageKey" style="border-color: rgba(99, 102, 241, 0.4); color: #c7d2fe;">
+                        ➕ Add to Staging Queue
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btnDirectSubmit">
+                        Register Directly
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Key -->
+    <div class="modal-backdrop" id="editKeyModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Key Details</h3>
+                <button class="modal-close-btn" id="closeEditModal">&times;</button>
+            </div>
+            <form id="editKeyForm">
+                <input type="hidden" id="editKeyId">
+                <div class="modal-body">
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="editKeyType">Key Type</label>
+                            <input class="form-input" type="text" id="editKeyType" readonly style="opacity: 0.75;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editStatus">Status</label>
+                            <select class="form-select" id="editStatus">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label" for="editProvider">Provider</label>
+                            <input class="form-input" type="text" id="editProvider" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editAccountName">Account Name</label>
+                            <input class="form-input" type="text" id="editAccountName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editApiUrl">API URL</label>
+                        <input class="form-input" type="url" id="editApiUrl" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editApiKey">API Key</label>
+                        <input class="form-input" type="text" id="editApiKey" required>
+                    </div>
+
+                    <!-- Limits Fields -->
+                    <fieldset class="limits-fieldset">
+                        <legend class="limits-legend">⚡ Request Limits (RPM, RPD & RPMon)</legend>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="editRpm">RPM</label>
+                                <input class="form-input" type="number" id="editRpm" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editRpmBurst">RPM Burst</label>
+                                <input class="form-input" type="number" id="editRpmBurst" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="editRpd">RPD</label>
+                                <input class="form-input" type="number" id="editRpd" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editRpdBurst">RPD Burst</label>
+                                <input class="form-input" type="number" id="editRpdBurst" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label class="form-label" for="editRpmon">RPMon</label>
+                                <input class="form-input" type="number" id="editRpmon" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editRpmonBurst">RPMon Burst</label>
+                                <input class="form-input" type="number" id="editRpmonBurst" min="0">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="limits-fieldset" id="editTokenBox">
+                        <legend class="limits-legend">🧠 Token Limits (TPM, TPD & TPMon)</legend>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="editTpm">TPM</label>
+                                <input class="form-input" type="number" id="editTpm" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editTpmBurst">TPM Burst</label>
+                                <input class="form-input" type="number" id="editTpmBurst" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                            <div class="form-group">
+                                <label class="form-label" for="editTpd">TPD</label>
+                                <input class="form-input" type="number" id="editTpd" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editTpdBurst">TPD Burst</label>
+                                <input class="form-input" type="number" id="editTpdBurst" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label class="form-label" for="editTpmon">TPMon</label>
+                                <input class="form-input" type="number" id="editTpmon" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editTpmonBurst">TPMon Burst</label>
+                                <input class="form-input" type="number" id="editTpmonBurst" min="0">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelEdit">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Confirm Cleanup All -->
+    <div class="modal-backdrop" id="cleanupModal">
+        <div class="modal" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color: #fb7185;">⚠️ Cleanup All Keys</h3>
+                <button class="modal-close-btn" id="closeCleanupModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6;">
+                    Are you sure you want to permanently delete <strong>all registered keys</strong> from the database? This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelCleanup">Cancel</button>
+                <button type="button" class="btn btn-danger-solid" id="btnConfirmCleanup">Yes, Delete Everything</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            LLM-rotry Gateway &bull; High-throughput API & LLM Key Load Balancer
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/static/js/mock_data.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
