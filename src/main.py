@@ -9,6 +9,8 @@ from contextlib import asynccontextmanager
 import redis
 from src.controller.controller_key import key_router
 from src.helper.sql import check_status
+from src.helper.redis import ping as redis_ping
+from src.services.engine import startup
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -22,17 +24,13 @@ async def lifespan_check(app: FastAPI):
 
     try:
 
-        client = redis.Redis(host='localhost', port=6379, db=0)
-        a = client.ping()
-        if not isinstance(a, bool):
-            raise ValueError("Expected a boolean value from Redis ping")
-        if a is not True:
-            raise ValueError("Redis is not available.")
-
+        if not isinstance(redis_ping(), bool) and redis_ping() is not True:
+            raise ValueError("Error: Redis is not available or cannot execute queries.")
         if check_status() == False:
-            raise ValueError("SQLite is not available or cannot execute queries.")
+            raise ValueError("Error: SQLite is not available or cannot execute queries.")
 
-        print("ready for requests")
+        startup()
+        print("Application is started ready.")
         yield
 
         print("shutting down")
@@ -60,5 +58,4 @@ async def serve_dashboard():
 
 app.add_api_route("/health", lambda: {"status": "ok"}, methods=["GET"])
 app.include_router(key_router, prefix="/keys", tags=["Key Management"])
-
 

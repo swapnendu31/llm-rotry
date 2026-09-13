@@ -752,7 +752,7 @@ input:checked + .slider:before {
 
 .limits-pill-group {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
 }
 
@@ -775,11 +775,6 @@ input:checked + .slider:before {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-main);
-}
-
-.limit-pill-burst {
-    font-size: 0.68rem;
-    color: var(--text-dim);
 }
 
 /* Card Actions */
@@ -918,6 +913,12 @@ input:checked + .slider:before {
     gap: 1rem;
 }
 
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
 .limits-fieldset {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -1035,8 +1036,12 @@ input:checked + .slider:before {
     .keys-grid {
         grid-template-columns: 1fr;
     }
-    .form-row-2 {
+    .form-row-2,
+    .form-row-3 {
         grid-template-columns: 1fr;
+    }
+    .limits-pill-group {
+        grid-template-columns: repeat(2, 1fr);
     }
     .staging-header {
         flex-direction: column;

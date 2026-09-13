@@ -219,35 +219,19 @@
 
                     <!-- Request-Based Limits (Both API Call and LLM Call) -->
                     <fieldset class="limits-fieldset">
-                        <legend class="limits-legend">⚡ Request Limits (RPMin, RPD & RPMon)</legend>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                        <legend class="limits-legend">⚡ Request Limits (RPM, RPD & RPMon)</legend>
+                        <div class="form-row-3">
                             <div class="form-group">
-                                <label class="form-label" for="addRpm">RPM (Requests/min)</label>
+                                <label class="form-label" for="addRpm">RPM (Req/min)</label>
                                 <input class="form-input" type="number" id="addRpm" placeholder="e.g. 500" min="1">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="addRpmBurst">RPM Burst (<= RPM)</label>
-                                <input class="form-input" type="number" id="addRpmBurst" placeholder="e.g. 50" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
-                            <div class="form-group">
-                                <label class="form-label" for="addRpd">RPD (Requests/day)</label>
+                                <label class="form-label" for="addRpd">RPD (Req/day)</label>
                                 <input class="form-input" type="number" id="addRpd" placeholder="e.g. 10000" min="1">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="addRpdBurst">RPD Burst (<= RPD)</label>
-                                <input class="form-input" type="number" id="addRpdBurst" placeholder="e.g. 500" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2">
-                            <div class="form-group">
-                                <label class="form-label" for="addRpmon">RPMon (Requests/month)</label>
+                                <label class="form-label" for="addRpmon">RPMon (Req/month)</label>
                                 <input class="form-input" type="number" id="addRpmon" placeholder="e.g. 200000" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="addRpmonBurst">RPMon Burst (<= RPMon)</label>
-                                <input class="form-input" type="number" id="addRpmonBurst" placeholder="e.g. 5000" min="0">
                             </div>
                         </div>
                     </fieldset>
@@ -255,37 +239,21 @@
                     <!-- Token-Based Limits (Only for LLM Call) -->
                     <fieldset class="limits-fieldset token-limits-box" id="tokenLimitsBox">
                         <legend class="limits-legend">🧠 Token Limits (TPM, TPD & TPMon - LLM Only)</legend>
-                        <div class="limits-info-banner" id="tokenNotice">
+                        <div class="limits-info-banner" id="tokenNotice" style="margin-bottom: 0.75rem;">
                             Generic API keys do not consume tokens. Token limits are only applied to LLM calls.
                         </div>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                        <div class="form-row-3">
                             <div class="form-group">
                                 <label class="form-label" for="addTpm">TPM (Tokens/min)</label>
                                 <input class="form-input token-input" type="number" id="addTpm" placeholder="e.g. 200000" min="1">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="addTpmBurst">TPM Burst (<= TPM)</label>
-                                <input class="form-input token-input" type="number" id="addTpmBurst" placeholder="e.g. 20000" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
-                            <div class="form-group">
                                 <label class="form-label" for="addTpd">TPD (Tokens/day)</label>
                                 <input class="form-input token-input" type="number" id="addTpd" placeholder="e.g. 2000000" min="1">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="addTpdBurst">TPD Burst (<= TPD)</label>
-                                <input class="form-input token-input" type="number" id="addTpdBurst" placeholder="e.g. 200000" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2">
-                            <div class="form-group">
                                 <label class="form-label" for="addTpmon">TPMon (Tokens/month)</label>
                                 <input class="form-input token-input" type="number" id="addTpmon" placeholder="e.g. 50000000" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="addTpmonBurst">TPMon Burst (<= TPMon)</label>
-                                <input class="form-input token-input" type="number" id="addTpmonBurst" placeholder="e.g. 1000000" min="0">
                             </div>
                         </div>
                     </fieldset>
@@ -354,68 +322,36 @@
                     <!-- Limits Fields -->
                     <fieldset class="limits-fieldset">
                         <legend class="limits-legend">⚡ Request Limits (RPM, RPD & RPMon)</legend>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                        <div class="form-row-3">
                             <div class="form-group">
                                 <label class="form-label" for="editRpm">RPM</label>
-                                <input class="form-input" type="number" id="editRpm" min="1">
+                                <input class="form-input" type="number" id="editRpm" min="1" placeholder="Unlimited">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editRpmBurst">RPM Burst</label>
-                                <input class="form-input" type="number" id="editRpmBurst" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
                             <div class="form-group">
                                 <label class="form-label" for="editRpd">RPD</label>
-                                <input class="form-input" type="number" id="editRpd" min="1">
+                                <input class="form-input" type="number" id="editRpd" min="1" placeholder="Unlimited">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editRpdBurst">RPD Burst</label>
-                                <input class="form-input" type="number" id="editRpdBurst" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2">
                             <div class="form-group">
                                 <label class="form-label" for="editRpmon">RPMon</label>
-                                <input class="form-input" type="number" id="editRpmon" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editRpmonBurst">RPMon Burst</label>
-                                <input class="form-input" type="number" id="editRpmonBurst" min="0">
+                                <input class="form-input" type="number" id="editRpmon" min="1" placeholder="Unlimited">
                             </div>
                         </div>
                     </fieldset>
 
                     <fieldset class="limits-fieldset" id="editTokenBox">
                         <legend class="limits-legend">🧠 Token Limits (TPM, TPD & TPMon)</legend>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
+                        <div class="form-row-3">
                             <div class="form-group">
                                 <label class="form-label" for="editTpm">TPM</label>
-                                <input class="form-input" type="number" id="editTpm" min="1">
+                                <input class="form-input" type="number" id="editTpm" min="1" placeholder="Unlimited">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editTpmBurst">TPM Burst</label>
-                                <input class="form-input" type="number" id="editTpmBurst" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2" style="margin-bottom: 0.75rem;">
                             <div class="form-group">
                                 <label class="form-label" for="editTpd">TPD</label>
-                                <input class="form-input" type="number" id="editTpd" min="1">
+                                <input class="form-input" type="number" id="editTpd" min="1" placeholder="Unlimited">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editTpdBurst">TPD Burst</label>
-                                <input class="form-input" type="number" id="editTpdBurst" min="0">
-                            </div>
-                        </div>
-                        <div class="form-row-2">
                             <div class="form-group">
                                 <label class="form-label" for="editTpmon">TPMon</label>
-                                <input class="form-input" type="number" id="editTpmon" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editTpmonBurst">TPMon Burst</label>
-                                <input class="form-input" type="number" id="editTpmonBurst" min="0">
+                                <input class="form-input" type="number" id="editTpmon" min="1" placeholder="Unlimited">
                             </div>
                         </div>
                     </fieldset>

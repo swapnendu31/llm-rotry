@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
 
 from src.helper.sql import delete_keys, get_all_keys, get_key, insert_keys, update_key
-from src.models.keys import Key_Type, Keys, RPM, RPD, TPD, TPM, Status
+from src.models.keys import Key_Type, Keys, Status
 
 
 key_router = APIRouter()
@@ -18,12 +18,12 @@ class KeyUpdate(BaseModel):
     provider: str | None = None
     account_name: str | None = None
     api_key: str | None = None
-    rpmon: RPM | None = None
-    rpm: RPM | None = None
-    rpd: RPD | None = None
-    tpd: TPD | None = None
-    tpm: TPM | None = None
-    tpmon: TPM | None = None
+    rpmon: int | None = None
+    rpm: int | None = None
+    rpd: int | None = None
+    tpd: int | None = None
+    tpm: int | None = None
+    tpmon: int | None = None
     status: Status | None = None
 
 

@@ -235,8 +235,9 @@
 
         let totalRpm = 0;
         keys.forEach(k => {
-            if (k.rpm && k.rpm.rpm) {
-                totalRpm += Number(k.rpm.rpm);
+            const rpm = typeof k.rpm === 'object' && k.rpm !== null ? k.rpm?.rpm : k.rpm;
+            if (rpm) {
+                totalRpm += Number(rpm);
             }
         });
 
@@ -323,24 +324,18 @@
             const isApi = key.key_type === 'api_call';
             const isChecked = state.selectedIds.has(key.id);
 
-            // Rate Limits Display
-            const rpmVal = key.rpm?.rpm ? `${Number(key.rpm.rpm).toLocaleString()} /min` : 'Unlimited';
-            const rpmBurst = key.rpm?.burst ? `(Burst: ${key.rpm.burst})` : '';
+            // Rate Limits Display Helper
+            const formatLimit = (v, unit) => {
+                const num = (typeof v === 'object' && v !== null) ? (v.rpm ?? v.rpd ?? v.tpm ?? v.tpd) : v;
+                return (num != null && num !== '') ? `${Number(num).toLocaleString()} ${unit}` : 'Unlimited';
+            };
 
-            const rpdVal = key.rpd?.rpd ? `${Number(key.rpd.rpd).toLocaleString()} /day` : 'Unlimited';
-            const rpdBurst = key.rpd?.burst ? `(Burst: ${key.rpd.burst})` : '';
-
-            const rpmonVal = key.rpmon?.rpm ? `${Number(key.rpmon.rpm).toLocaleString()} /mo` : 'Unlimited';
-            const rpmonBurst = key.rpmon?.burst ? `(Burst: ${key.rpmon.burst})` : '';
-
-            const tpmVal = key.tpm?.tpm ? `${Number(key.tpm.tpm).toLocaleString()} /min` : 'Unlimited';
-            const tpmBurst = key.tpm?.burst ? `(Burst: ${key.tpm.burst})` : '';
-
-            const tpdVal = key.tpd?.tpd ? `${Number(key.tpd.tpd).toLocaleString()} /day` : 'Unlimited';
-            const tpdBurst = key.tpd?.burst ? `(Burst: ${key.tpd.burst})` : '';
-
-            const tpmonVal = key.tpmon?.tpm ? `${Number(key.tpmon.tpm).toLocaleString()} /mo` : 'Unlimited';
-            const tpmonBurst = key.tpmon?.burst ? `(Burst: ${key.tpmon.burst})` : '';
+            const rpmVal = formatLimit(key.rpm, '/min');
+            const rpdVal = formatLimit(key.rpd, '/day');
+            const rpmonVal = formatLimit(key.rpmon, '/mo');
+            const tpmVal = formatLimit(key.tpm, '/min');
+            const tpdVal = formatLimit(key.tpd, '/day');
+            const tpmonVal = formatLimit(key.tpmon, '/mo');
 
             return `
             <div class="key-card" data-id="${key.id}">
@@ -396,33 +391,27 @@
                         <div class="limit-pill">
                             <span class="limit-pill-name">RPM (Req/Min)</span>
                             <span class="limit-pill-val">${rpmVal}</span>
-                            <span class="limit-pill-burst">${rpmBurst}</span>
                         </div>
                         <div class="limit-pill">
                             <span class="limit-pill-name">RPD (Req/Day)</span>
                             <span class="limit-pill-val">${rpdVal}</span>
-                            <span class="limit-pill-burst">${rpdBurst}</span>
                         </div>
                         <div class="limit-pill">
                             <span class="limit-pill-name">RPMon (Req/Month)</span>
                             <span class="limit-pill-val">${rpmonVal}</span>
-                            <span class="limit-pill-burst">${rpmonBurst}</span>
                         </div>
                         ${!isApi ? `
                         <div class="limit-pill">
                             <span class="limit-pill-name">TPM (Tok/Min)</span>
                             <span class="limit-pill-val">${tpmVal}</span>
-                            <span class="limit-pill-burst">${tpmBurst}</span>
                         </div>
                         <div class="limit-pill">
                             <span class="limit-pill-name">TPD (Tok/Day)</span>
                             <span class="limit-pill-val">${tpdVal}</span>
-                            <span class="limit-pill-burst">${tpdBurst}</span>
                         </div>
                         <div class="limit-pill">
                             <span class="limit-pill-name">TPMon (Tok/Month)</span>
                             <span class="limit-pill-val">${tpmonVal}</span>
-                            <span class="limit-pill-burst">${tpmonBurst}</span>
                         </div>
                         ` : ''}
                     </div>
@@ -486,50 +475,26 @@
 
         // RPM
         const rpm = document.getElementById('addRpm').value;
-        const rpmBurst = document.getElementById('addRpmBurst').value;
-        if (rpm) {
-            data.rpm = { rpm: parseInt(rpm, 10) };
-            if (rpmBurst) data.rpm.burst = parseInt(rpmBurst, 10);
-        }
+        if (rpm) data.rpm = parseInt(rpm, 10);
 
         // RPD
         const rpd = document.getElementById('addRpd').value;
-        const rpdBurst = document.getElementById('addRpdBurst').value;
-        if (rpd) {
-            data.rpd = { rpd: parseInt(rpd, 10) };
-            if (rpdBurst) data.rpd.burst = parseInt(rpdBurst, 10);
-        }
+        if (rpd) data.rpd = parseInt(rpd, 10);
 
         // RPMon
         const rpmon = document.getElementById('addRpmon').value;
-        const rpmonBurst = document.getElementById('addRpmonBurst').value;
-        if (rpmon) {
-            data.rpmon = { rpm: parseInt(rpmon, 10) };
-            if (rpmonBurst) data.rpmon.burst = parseInt(rpmonBurst, 10);
-        }
+        if (rpmon) data.rpmon = parseInt(rpmon, 10);
 
         // If LLM call, include TPM, TPD and TPMon
         if (key_type === 'llm_call') {
             const tpm = document.getElementById('addTpm').value;
-            const tpmBurst = document.getElementById('addTpmBurst').value;
-            if (tpm) {
-                data.tpm = { tpm: parseInt(tpm, 10) };
-                if (tpmBurst) data.tpm.burst = parseInt(tpmBurst, 10);
-            }
+            if (tpm) data.tpm = parseInt(tpm, 10);
 
             const tpd = document.getElementById('addTpd').value;
-            const tpdBurst = document.getElementById('addTpdBurst').value;
-            if (tpd) {
-                data.tpd = { tpd: parseInt(tpd, 10) };
-                if (tpdBurst) data.tpd.burst = parseInt(tpdBurst, 10);
-            }
+            if (tpd) data.tpd = parseInt(tpd, 10);
 
             const tpmon = document.getElementById('addTpmon').value;
-            const tpmonBurst = document.getElementById('addTpmonBurst').value;
-            if (tpmon) {
-                data.tpmon = { tpm: parseInt(tpmon, 10) };
-                if (tpmonBurst) data.tpmon.burst = parseInt(tpmonBurst, 10);
-            }
+            if (tpmon) data.tpmon = parseInt(tpmon, 10);
         }
 
         return data;
@@ -630,13 +595,16 @@
         document.getElementById('editApiUrl').value = key.api_url || '';
         document.getElementById('editApiKey').value = key.api_key || '';
 
+        const getRawLimit = (v) => {
+            if (v == null) return '';
+            if (typeof v === 'object') return (v.rpm ?? v.rpd ?? v.tpm ?? v.tpd ?? '');
+            return v;
+        };
+
         // RPM, RPD, RPMon
-        document.getElementById('editRpm').value = key.rpm?.rpm || '';
-        document.getElementById('editRpmBurst').value = key.rpm?.burst || '';
-        document.getElementById('editRpd').value = key.rpd?.rpd || '';
-        document.getElementById('editRpdBurst').value = key.rpd?.burst || '';
-        document.getElementById('editRpmon').value = key.rpmon?.rpm || '';
-        document.getElementById('editRpmonBurst').value = key.rpmon?.burst || '';
+        document.getElementById('editRpm').value = getRawLimit(key.rpm);
+        document.getElementById('editRpd').value = getRawLimit(key.rpd);
+        document.getElementById('editRpmon').value = getRawLimit(key.rpmon);
 
         // Token limits
         const isApi = key.key_type === 'api_call';
@@ -644,12 +612,9 @@
             elements.editTokenBox.style.display = 'none';
         } else {
             elements.editTokenBox.style.display = 'block';
-            document.getElementById('editTpm').value = key.tpm?.tpm || '';
-            document.getElementById('editTpmBurst').value = key.tpm?.burst || '';
-            document.getElementById('editTpd').value = key.tpd?.tpd || '';
-            document.getElementById('editTpdBurst').value = key.tpd?.burst || '';
-            document.getElementById('editTpmon').value = key.tpmon?.tpm || '';
-            document.getElementById('editTpmonBurst').value = key.tpmon?.burst || '';
+            document.getElementById('editTpm').value = getRawLimit(key.tpm);
+            document.getElementById('editTpd').value = getRawLimit(key.tpd);
+            document.getElementById('editTpmon').value = getRawLimit(key.tpmon);
         }
 
         openModal(elements.editKeyModal);
@@ -670,47 +635,23 @@
         };
 
         const rpm = document.getElementById('editRpm').value;
-        const rpmBurst = document.getElementById('editRpmBurst').value;
-        if (rpm) {
-            updates.rpm = { rpm: parseInt(rpm, 10) };
-            if (rpmBurst) updates.rpm.burst = parseInt(rpmBurst, 10);
-        }
+        if (rpm !== '') updates.rpm = parseInt(rpm, 10);
 
         const rpd = document.getElementById('editRpd').value;
-        const rpdBurst = document.getElementById('editRpdBurst').value;
-        if (rpd) {
-            updates.rpd = { rpd: parseInt(rpd, 10) };
-            if (rpdBurst) updates.rpd.burst = parseInt(rpdBurst, 10);
-        }
+        if (rpd !== '') updates.rpd = parseInt(rpd, 10);
 
         const rpmon = document.getElementById('editRpmon').value;
-        const rpmonBurst = document.getElementById('editRpmonBurst').value;
-        if (rpmon) {
-            updates.rpmon = { rpm: parseInt(rpmon, 10) };
-            if (rpmonBurst) updates.rpmon.burst = parseInt(rpmonBurst, 10);
-        }
+        if (rpmon !== '') updates.rpmon = parseInt(rpmon, 10);
 
         if (keyType === 'llm_call') {
             const tpm = document.getElementById('editTpm').value;
-            const tpmBurst = document.getElementById('editTpmBurst').value;
-            if (tpm) {
-                updates.tpm = { tpm: parseInt(tpm, 10) };
-                if (tpmBurst) updates.tpm.burst = parseInt(tpmBurst, 10);
-            }
+            if (tpm !== '') updates.tpm = parseInt(tpm, 10);
 
             const tpd = document.getElementById('editTpd').value;
-            const tpdBurst = document.getElementById('editTpdBurst').value;
-            if (tpd) {
-                updates.tpd = { tpd: parseInt(tpd, 10) };
-                if (tpdBurst) updates.tpd.burst = parseInt(tpdBurst, 10);
-            }
+            if (tpd !== '') updates.tpd = parseInt(tpd, 10);
 
             const tpmon = document.getElementById('editTpmon').value;
-            const tpmonBurst = document.getElementById('editTpmonBurst').value;
-            if (tpmon) {
-                updates.tpmon = { tpm: parseInt(tpmon, 10) };
-                if (tpmonBurst) updates.tpmon.burst = parseInt(tpmonBurst, 10);
-            }
+            if (tpmon !== '') updates.tpmon = parseInt(tpmon, 10);
         }
 
         if (state.isStaticMode) {
