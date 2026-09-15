@@ -8,6 +8,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 import redis
 from src.controller.controller_key import key_router
+from src.controller.controller_run import runtime_router
 from src.helper.sql import check_status
 from src.helper.redis import ping as redis_ping
 from src.services.engine import startup
@@ -58,4 +59,6 @@ async def serve_dashboard():
 
 app.add_api_route("/health", lambda: {"status": "ok"}, methods=["GET"])
 app.include_router(key_router, prefix="/keys", tags=["Key Management"])
+app.include_router(runtime_router, tags=["Rotation & Proxy"])
+
 
