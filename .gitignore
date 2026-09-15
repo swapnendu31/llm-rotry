@@ -1,4 +1,48 @@
-settings.json
-__pycache__/
+# Environment & secrets
 .env
+.env.local
 keys.db
+*.db
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Pytest & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor & IDE
+.vscode/
+.idea/
+settings.json
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
