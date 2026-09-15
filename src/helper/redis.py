@@ -79,7 +79,7 @@ def persist(key: str) -> bool:
 
 # Hashes
 def hset(key: str, field: str, value: Any) -> int:
-     return int(redis_client.hset(key, field, value))
+    return int(redis_client.hset(key, field, str_convert(value)))
 
 
 def str_convert(value: Any) -> str:
@@ -94,7 +94,12 @@ def str_convert(value: Any) -> str:
         return json.dumps(value, default=str)
 
 def hset_many(key: str, values: dict[str, Any]) -> int:
-    return int(redis_client.hset(key, mapping=values))
+    redis_values = {
+        field: str_convert(value)
+        for field, value in values.items()
+        if value is not None
+    }
+    return int(redis_client.hset(key, mapping=redis_values))
 
 def hget(key: str, field: str) -> str | None:
     return redis_client.hget(key, field)
@@ -114,6 +119,11 @@ def hexists(key: str, field: str) -> bool:
 
 def hdelete(key: str, *fields: str) -> int:
     return int(redis_client.hdel(key, *fields))
+
+
+def hincrby(key: str, field: str, amount: int = 1) -> int:
+    """Atomically increment an integer field in a Redis hash."""
+    return int(redis_client.hincrby(key, field, amount))
 
 
 def hkeys(key: str) -> list[str]:
