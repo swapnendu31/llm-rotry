@@ -103,7 +103,8 @@ def mock_redis(monkeypatch):
 
 @pytest.fixture
 def client():
-    with TestClient(app, raise_server_exceptions=False) as c:
+    headers = {"X-Auth-Key": "rotator_secret_key_123"}
+    with TestClient(app, raise_server_exceptions=False, headers=headers) as c:
         yield c
 
 

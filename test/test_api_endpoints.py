@@ -5,8 +5,9 @@ from src.main import app
 
 @pytest.fixture
 def client():
-    # Bypass lifespan database checks for unit tests
-    with TestClient(app, raise_server_exceptions=False) as c:
+    # Bypass lifespan database checks for unit tests with Auth Key configured
+    headers = {"X-Auth-Key": "rotator_secret_key_123"}
+    with TestClient(app, raise_server_exceptions=False, headers=headers) as c:
         yield c
 
 
