@@ -457,7 +457,7 @@
         const api_url = document.getElementById('addApiUrl').value.trim();
         const api_key = document.getElementById('addApiKey').value.trim();
 
-        if (!provider || !account_name || !api_url || !api_key) {
+        if (!provider || !account_name || !api_url) {
             showToast('Please fill out all required fields (*)', 'error');
             return null;
         }
@@ -832,7 +832,7 @@
     }
 
     function maskKey(key) {
-        if (!key) return '';
+        if (!key) return '(Keyless)';
         if (key.length <= 10) return '••••••••';
         return key.slice(0, 7) + '••••••••' + key.slice(-4);
     }

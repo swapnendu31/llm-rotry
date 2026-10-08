@@ -1,5 +1,7 @@
+import itertools
 import json
 import math
+import os
 from typing import Any
 
 import httpx
@@ -11,6 +13,18 @@ from src.services.engine import (
     get_key_record_from_redis,
     set_cooldown,
 )
+
+# 3 routes: 1st own IP (None), 2nd Tunnel 1, 3rd Tunnel 2
+PROXY_ROUTES = [
+    None,
+    os.getenv("ROUTE_1_PROXY", "socks5://127.0.0.1:1081")
+]
+_route_cycle = itertools.cycle(PROXY_ROUTES)
+
+
+def get_next_proxy() -> str | None:
+    return next(_route_cycle)
+
 
 runtime_router = APIRouter()
 MAX_RETRIES = 3
@@ -139,11 +153,15 @@ async def proxy_request(
 
         forward_headers = dict(request.headers)
         forward_headers.pop("host", None)
-        forward_headers["Authorization"] = f"Bearer {record['api_key']}"
-        forward_headers["X-API-KEY"] = record["api_key"]
+        api_auth = record.get("api_key")
+        if api_auth:
+            forward_headers["Authorization"] = f"Bearer {api_auth}"
+            forward_headers["X-API-KEY"] = api_auth
+
+        proxy_url = get_next_proxy()
 
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(proxy=proxy_url, timeout=60.0) as client:
                 upstream_resp = await client.request(
                     method=request.method,
                     url=target_url,
