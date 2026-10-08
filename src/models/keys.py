@@ -60,7 +60,7 @@ class Keys(BaseModel):
     api_url : str = Field(description="Api endpoint URL")
     provider : str = Field(description="The provider of the key")
     account_name : str = Field(description="The account name associated with the key")
-    api_key : str = Field(description="The API key")            
+    api_key : Optional[str] = Field(default="", description="The API key")            
     rpmon : Optional[int] = Field(description="The number of requests per month", default=None)
     rpm : Optional[int] = Field(description="The number of requests per minute", default=None)
     rpd : Optional[int] = Field(description="The request limits for the key per day", default=None)
@@ -75,6 +75,8 @@ class Keys(BaseModel):
     @classmethod
     def clean_field(cls, values: Any):
         def _clean_single(v: dict[str, Any]):
+            if v.get("api_key") is None:
+                v["api_key"] = ""
             if v.get("key_type") == "api_call":
                 v.pop("tpd", None)
                 v.pop("tpm", None)

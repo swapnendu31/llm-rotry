@@ -75,7 +75,7 @@ def rule_for_api(key: str, key_info: dict[str, str] | None = None) -> str | None
     )
     if not allowed:
         return None
-    return info.get("api_key")
+    return info.get("api_key", "")
 
 
 def rule_for_llm(key: str, tokens: int, key_info: dict[str, str] | None = None) -> str | None:
@@ -97,7 +97,7 @@ def rule_for_llm(key: str, tokens: int, key_info: dict[str, str] | None = None) 
     )
     if not allowed:
         return None
-    return info.get("api_key")
+    return info.get("api_key", "")
 
 
 def select_get_key(key: str, tokens: int = 0):
