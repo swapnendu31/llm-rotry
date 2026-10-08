@@ -17,7 +17,8 @@ from src.services.engine import (
 # 3 routes: 1st own IP (None), 2nd Tunnel 1, 3rd Tunnel 2
 PROXY_ROUTES = [
     None,
-    os.getenv("ROUTE_1_PROXY", "socks5://127.0.0.1:1081")
+    os.getenv("ROUTE_1_PROXY"),
+    os.getenv("ROUTE_2_PROXY")    
 ]
 _route_cycle = itertools.cycle(PROXY_ROUTES)
 
@@ -162,9 +163,8 @@ async def proxy_request(
             forward_headers["X-API-KEY"] = api_auth
 
         proxy_url = get_next_proxy()
-
         try:
-            async with httpx.AsyncClient(proxy=proxy_url, timeout=60.0) as client:
+            async with httpx.AsyncClient(proxy=proxy_url, timeout=240.0) as client:
                 upstream_resp = await client.request(
                     method=request.method,
                     url=target_url,
