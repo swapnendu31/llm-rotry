@@ -135,7 +135,10 @@ async def proxy_request(
             )
 
         if subpath:
-            target_url = target_url.rstrip("/") + "/" + subpath.lstrip("/")
+            clean_subpath = subpath.strip("/")
+            clean_target = target_url.rstrip("/")
+            if not clean_target.endswith(clean_subpath):
+                target_url = clean_target + "/" + clean_subpath
 
         forward_headers = dict(request.headers)
         forward_headers.pop("host", None)

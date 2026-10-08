@@ -47,7 +47,6 @@ def startup():
 
         for key, value in provider_set.items():
             sadd(key, *value)
-        get_key_from_redis("Serper")
     except Exception as e:
         raise RuntimeError(f"Error during startup: {e}") from e
 
